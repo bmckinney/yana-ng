@@ -1,0 +1,121 @@
+<!DOCTYPE html> 
+<html> 
+  <head>
+    <!-- 
+     This is a generic yana html file: you should not have to modify this file.
+     All your modifications should be made in journal.js and journal.css
+     -->
+    <title></title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- external javascript and css yana depends on -->
+    <script src="lib/jquery-1.6.1.min.js"></script>
+    <script src="lib/jquery-mobile-global-config.js"></script>
+    <script src="lib/amplify.min.js"></script>            
+    <script src="lib/jsonStringify.js"></script>
+    <script src="lib/cordova-2.0.0.js"></script>
+    <script src="lib/childbrowser.js"></script>
+    <script src="lib/jquery.mobile-1.1.0/jquery.mobile-1.1.0.min.js"></script>
+    <script src="lib/jquery.yqlquery.min.js"></script>
+    <script src="lib/yana.js"></script>
+    <link rel="stylesheet" href="lib/jquery.mobile-1.1.0/jquery.mobile-1.1.0.min.css" />  
+
+  </head>
+  <body>
+
+  <!-- HOME PAGE -->
+  <div data-role="page" data-theme="b" data-add-back-btn="true" id="home">
+      <div data-role="header" data-theme="b" class="ui-bar">
+        <h1>Yana Demo Journal</h1>
+      </div>
+      <div data-role="content" class="ui-content" role="main" data-theme="c">
+
+          <ul data-role="listview" data-theme="c" data-inset="true" id="list_a"> 
+            <li id="current" data-source="http://osc.hul.harvard.edu/yana/currentissue.xml" class="rss">
+              <a href="#">Current Issue</a>
+              <ul data-role="listview" data-inset="true" id="current_rss"></ul>
+            </li> 
+            <li id="archive" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/archive.xml" class="rss">
+              <a href="#">Archive</a>
+              <ul data-role="listview" data-inset="true" id="archive_rss"></ul>
+            </li> 
+            <li id="search" class"opensearch">
+              <a href="#searchPage">Search</a>
+            </li> 
+            <li id="favorites" class="favorites">
+              <a href="#favorites">Favorites</a>
+              <ul data-role="listview" data-inset="true" id="favorites_rss"></ul>
+            </li> 
+          </ul>
+
+          <ul data-role="listview" data-theme="c" data-inset="true" id="list_b">
+            <li id="about" class="html" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/aboutyana.html">
+              <a href="#htmlPage">About</a>
+            </li>
+            <li id="announce" data-source="http://osc.hul.harvard.edu/yana/announcements.xml" class="rss">
+              <a href="#">Announcements</a>
+              <ul data-role="listview" data-inset="true" id="announce_rss"></ul>
+            </li> 
+            <li id="authors" class="html" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/forAuthors.html">
+              <a href="#htmlPage">For Authors</a>
+            </li>
+            <li id="lnks" class="html" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/yana_links.html">
+              <a href="#htmlPage">Links</a>
+            </li>
+
+          </ul>
+
+      </div>
+  </div>
+
+  <!-- SEARCH PAGE -->
+  <div data-role="page" id="searchPage" data-url="searchPage" data-theme="b">
+    <div data-role="header" id="searchHeader"  data-theme="b">
+      <a href="#" data-rel="back" data-icon="arrow-l">Back</a>
+      <h1>Search</h1>
+      <a href="#home" data-icon="home">Home</a>
+    </div>
+    <div data-role="content" class="opensearchContent" data-theme="c">
+      <form action="http://dash.harvard.edu/open-search/" id="osForm">
+        <input type="search" name="query" id="search-basic" value="" />
+        <input type="hidden" name="sort_by" value="2"/>
+        <input type="hidden" name="rpp" value="5"/>
+        <input type="hidden" name="order" value="desc"/>
+        <input type="hidden" name="format" value="rss"/>
+        <input type="submit" data-theme="b" value="Search"/>
+      </form>
+      <div id="searchResultsContainer">
+        <ul data-role="listview" data-inset="true" id="searchResults"></ul>
+      </div> 
+    </div>
+
+ </div>
+
+<!-- ARTICLE DETAILS -->
+  <div data-role="page" id="articleDetails" data-theme="b">
+    <div data-role="header" data-theme="b">
+      <a href="#" data-rel="back" data-icon="arrow-l">Back</a>
+      <h1 id="articleTitle"></h1>
+      <a href="#home" data-icon="home">Home</a></div>
+    <div data-role="content" data-theme="c">
+      <div id="articleContent"></div>
+    </div>
+    <div data-role="footer" class="ui-bar" data-theme="b" id="articleFooter">     
+    </div>
+  </div>  
+
+<!-- HTML DISPLAY -->
+  <div data-role="page" id="htmlPage" data-theme="b">
+    <div data-role="header" data-theme="b">
+      <a href="#" data-rel="back" data-icon="arrow-l">Back</a>
+      <h1 id="htmlTitle"></h1>
+      <a href="#home" data-icon="home">Home</a></div>
+    <div data-role="content" data-theme="c">
+      <div id="htmlContent"></div>
+    </div>
+  </div>
+
+
+  </body>
+</html>
