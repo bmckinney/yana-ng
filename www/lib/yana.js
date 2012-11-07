@@ -1,10 +1,12 @@
-    var currentItems = [];
-    var favorites = [];
+    var favorites = amplify.store("YANA.favorites") ? amplify.store("YANA.favorites") : [];
+    var cachedItems = amplify.store("YANA.items") ? amplify.store("YANA.items") : [];
 
     $(document).ready(function () {
     
       // initialize favorites
-      if (amplify.store("YANA.favorites")) favorites = amplify.store("YANA.favorites");
+      //if (amplify.store("YANA.favorites")) favorites = amplify.store("YANA.favorites");
+      //if (amplify.store("YANA.items")) cachedItems = amplify.store("YANA.items");
+
 
       // --------------------------------------------------------------------------
       // --------------------------- SEARCH ---------------------------------------
@@ -27,7 +29,8 @@
                     $.each(JSON.parse(result).query.results.rss.channel.item, function(index) {
                       ul += '<li id="result_'+index+'" data-source="'+this.link+
                         '" class="html articleDetails" data-theme="c" data-item-index="'+index+'">'+
-                        '<a href="#articleDetails">'+this.title+'</a></li>';
+                        '<a href="#articleDetails&type=item&url='+
+                        encodeURIComponent(this.link).replace(/\./g,'%2E')+'">'+this.title+'</a></li>';
                     }); 
                   }
               },
@@ -41,11 +44,36 @@
           });
       return false;
       }); // opensearch form submit
+
     }); // document.ready
+
+    // --------------------------------------------------------------------------
+    // ------------------- CALL RENDERS BASED ON URL PARAMS ---------------------
+    // --------------------------------------------------------------------------
+    $(document).bind( "pagebeforechange", function( e, data ) {
+
+      if ( typeof data.toPage === "string" ) {
+          var hash = $.mobile.path.parseUrl( data.toPage ).hash;
+          console.log("pagebeforechange: "+hash);
+          var type = $.url(hash).fparam('type');
+          var url = $.url(hash).fparam('url'); 
+          var index = getItemIndex(url); // is it in cache?
+          if (hash === '#favPage') { renderFavorites(); }
+          if (url !== null) {
+            if (type === 'item') {  if (index !== -1) renderItemDetails(index);
+            } else if (type === 'feed') { renderFeedItems(url,$.url(hash).fparam('title')); 
+            } else if (type === 'html') { renderHtmlPage(url,$.url(hash).fparam('title')); } 
+          }
+      }
+    });
 
       // --------------------------------------------------------------------------
       // --------------------------- JQM HACKS ------------------------------------
       // --------------------------------------------------------------------------
+      $(document).bind( "pagechange", function() {
+        $('.ui-page-active .ui-listview').listview('refresh');
+        $('.ui-page-active :jqmData(role=content)').trigger('create');
+      });
       // hack to add the back and home button to all nested listviews
       $(':jqmData(url^=home)').live('pagebeforecreate', 
         function(event) {
@@ -70,7 +98,8 @@
       // --------------------------------------------------------------------------
       // --------------------------- FAVORITES ------------------------------------
       // --------------------------------------------------------------------------
-      function hasFavorite(link) {
+
+      function getFavoriteIndex(link) {
           for (var i=0;i<favorites.length;i++) {
             if (favorites[i]['link'] === link ) return i;
           }
@@ -78,77 +107,113 @@
       }
 
       $('.addFavoriteButton').live('click',
-        function() {   
-          var index = $(this).attr('data-item-index');
-          var item = currentItems[index];
-          if (hasFavorite(item.link) == -1){
+        function() { 
+          var link = $(this).attr('data-item-link') 
+          var item = getCachedItem(link);
+          if (item !== null){
             favorites.push(item);
             amplify.store("YANA.favorites",favorites);
           }
+          $('#addFavButton').hide();
+          $('#removeFavButton').show();
       });
 
       $('.deleteFavoriteButton').live('click',
-        function() {   
-          var index = $(this).attr('data-item-index');
-          var item = currentItems[index];
-          var pos = hasFavorite(item.link);
+        function() {
+          var link = $(this).attr('data-item-link');
+          var pos = getFavoriteIndex(link);
           if ( pos != -1) { 
             favorites.splice(pos, 1);
             amplify.store("YANA.favorites",favorites);
           }
+          $('#addFavButton').show();
+          $('#removeFavButton').hide();
       });
 
       $('.favorites').live('click',
         function() {
-          var ul = '';
-          $.each(favorites, function(index) {
-           ul += '<li class="articleDetails" data-item-index="'+index+'" data-theme="c">' +
-            '<a href="#articleDetails">'+this.title+'</a></li>';
-          });
           currentItems = favorites;
-          $('#favorites_rss').listview();
-          $('#favorites_rss').html(ul).trigger('create');
-          $('#favorites_rss').listview('refresh');
+          $('#favContent ul').listview();
+          $('#favContent ul').listview('refresh');
           $.mobile.hidePageLoadingMsg();
+      });
+     
+      function renderFavorites() {
+        var ul = '';
+        $.each(favorites, function(index) {
+         ul += '<li class="articleDetails" data-item-link="'+this.link+'" data-theme="c">' +
+          '<a href="#articleDetails&type=item&url='+encodeURIComponent(this.link).replace(/\./g,'%2E')+
+          '&title='+encodeURIComponent(this.title)+'">'+this.title+'</a></li>';
         });
+        currentItems = favorites;
+        $('#favContent ul').html(ul).trigger('create');
+        $.mobile.hidePageLoadingMsg();
+      }
  
       // --------------------------------------------------------------------------
       // --------------------------- ITEM VIEW ------------------------------------
       // --------------------------------------------------------------------------
       $('.articleDetails').live('click',
-        function() {  
-          var itemIndex = $(this).attr('data-item-index');
-          $("#articleContent").html(currentItems[itemIndex].description);
-          $("#articleTitle").html(currentItems[itemIndex].title);
-          var buttons = '';
-          if (currentItems[itemIndex].enclosure) {
-            buttons += '<a onclick="return showInChildBrowser(\'' + currentItems[itemIndex].enclosure.url + '\');" '+
-              'rel="external" href="'+currentItems[itemIndex].enclosure.url+'" data-role="button">PDF</a>';
-          }
-          if (currentItems[itemIndex].link) {
-            buttons += '<a onclick="return showInChildBrowser(\'' + currentItems[itemIndex].link + '\');" '+
-              'rel="external" href="'+currentItems[itemIndex].link+'" data-role="button">Web</a>';
-          }
-          if (hasFavorite(currentItems[itemIndex].link) != -1) {
-            buttons += '<a href="#" data-item-index="'+itemIndex+
-              '" class="deleteFavoriteButton" data-role="button">Remove from Favorites</a>';
-          } else {
-            buttons += '<a href="#" data-item-index="'+itemIndex+
-              '" class="addFavoriteButton" data-role="button">Add to Favorites</a>';            
-          }
-          var controlGroup = '<div data-role="controlgroup" id="articleFooterButtons" data-type="horizontal">'+
-            buttons+'</div>';
-          $("#articleFooter").html(controlGroup).trigger('create');
+        function() { 
+          var hash = $(this).find('a').attr('href');
+          window.location.replace(hash); // won't update properly otherwise...
       });
+
+      function renderItemDetails(itemIndex) {
+        var buttons = '';
+        $("#articleContent").html(cachedItems[itemIndex].description);
+        $("#articleTitle").html(cachedItems[itemIndex].title);
+        if (cachedItems[itemIndex].enclosure) {
+          buttons += '<a onclick="return showInChildBrowser(\'' + cachedItems[itemIndex].enclosure.url + '\');" '+
+            'rel="external" href="'+cachedItems[itemIndex].enclosure.url+'" data-role="button">PDF</a> ';
+        }
+        if (cachedItems[itemIndex].link) {
+          buttons += '<a onclick="return showInChildBrowser(\'' + cachedItems[itemIndex].link + '\');" '+
+            'rel="external" href="'+cachedItems[itemIndex].link+'" data-role="button">Web</a> ';
+        }
+          buttons += '<a href="#" id="removeFavButton" data-item-index="'+itemIndex+'" data-item-link="'+cachedItems[itemIndex].link+
+            '" class="deleteFavoriteButton" data-role="button">Remove from Favorites</a>';
+          buttons += '<a href="#" id="addFavButton" data-item-index="'+itemIndex+'" data-item-link="'+cachedItems[itemIndex].link+
+            '" class="addFavoriteButton" data-role="button">Add to Favorites</a>';            
+        $("#articleFooter").html(buttons).trigger('create');
+        if (getFavoriteIndex(cachedItems[itemIndex].link) != -1) { $('#addFavButton').hide(); } else { $('#removeFavButton').hide(); }
+      }
+
+      function getItemIndex(link) {
+          for (var i=0;i<cachedItems.length;i++) {
+            if (cachedItems[i]['link'] === link ) return i;
+          }
+          return -1;
+      }
+      function getCachedItem(link) {
+          for (var i=0;i<cachedItems.length;i++) {
+            if (cachedItems[i]['link'] === link ) return cachedItems[i];
+          }
+          return null;
+      }
+
+      function addCachedItem(item) {
+          if (getItemIndex(item.link) === -1){
+            cachedItems.push(item);
+            amplify.store("YANA.items",cachedItems);
+          }
+      }
 
       // --------------------------------------------------------------------------
       // --------------------------- HTML ITEM ------------------------------------
       // --------------------------------------------------------------------------
       $('.html').live('click',
         function() { 
-          var htmlId = $(this).attr('id')+'_html'; 
-          var title = $(this).find('a').text();
-           var url = $(this).attr("data-source");
+          var url = $(this).attr("data-source");
+          var title = $.trim($(this).find('a').text());
+          var hash = '#htmlPage&type=html&url=' + encodeURIComponent(url).replace(/\./g,'%2E') + '&title=' + encodeURIComponent(title);
+          window.location.replace(hash); // won't update properly otherwise...
+          $('#htmlContent').hide();
+          renderHtmlPage(url,title); // needed for refresh bug...
+      });
+      
+      function renderHtmlPage(url,title) { 
+        console.log("renderHtmlPage title: "+title);
           var yqlUrl  = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22"+
             encodeURIComponent(url) + "%22";
           var html = '';
@@ -161,65 +226,64 @@
               success: function(data) { if (data.results[0]) { html = data.results[0]; } },
               error: function(request, textStatus, errorThrown) { console.log("error: "+errorThrown); },
               complete: function(request, textStatus){
+                $('#htmlContent').show();
                 $("#htmlContent").html(html);
                 $("#htmlTitle").html(title);
                 $.mobile.hidePageLoadingMsg()
               }
           }); 
+      }
+
+      // --------------------------------------------------------------------------
+      // --------------------------- RSS MENU ITEMS -------------------------------
+      // --------------------------------------------------------------------------
+      $('.feed').live('click',
+        function() { 
+          var url = $(this).attr("data-source");
+          var title = $.trim($(this).find('a').text());
+          var hash = '#feedPage&type=feed&url=' + encodeURIComponent(url).replace(/\./g,'%2E')+ '&title=' + encodeURIComponent(title);
+          window.location.replace(hash); // won't update properly otherwise...
+          $('#feedList').hide();
+          renderFeedItems(url,title);
       });
 
-      // --------------------------------------------------------------------------
-      // --------------------------- RSS MENU ITEM --------------------------------
-      // --------------------------------------------------------------------------
-      $('.rss').live('click',
-        function() {   
-          var url = $(this).attr("data-source");
-          var rssId = $(this).attr('id')+'_rss';
-          var yqlUrl = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20xml%20where%20url%3D%22" + 
-              encodeURIComponent(url) + 
-              "%22%20or%20url%20in%20(select%20link%20from%20feed%20where%20url%3D%22" + encodeURIComponent(url) +
-              "%22)&format=json";
-          var ul = '';
-          var listCount = 0;
-          $.ajax({
-              type: "GET",
-              url: yqlUrl,
-              contentType: "application/json; charset=utf-8",
-              dataType: "jsonp",
-              beforeSend: function() { $.mobile.showPageLoadingMsg(); },
-              success: function(data) {
-                  var result = JSON.stringify(data);                  
-                  if(JSON.parse(result).query.results && JSON.parse(result).query.results.rss) {
-
-                      if (JSON.parse(result).query.results.html) {
-                        // [1] all rss items are html
-                        if (JSON.parse(result).query.results.html.length == JSON.parse(result).query.results.rss.channel.item.length) {
-                          currentItems = JSON.parse(result).query.results.rss.channel.item;
-                          $.each(JSON.parse(result).query.results.rss.channel.item, function(index) {
-                            var sublistId = rssId + '_' + listCount++;
-                            ul += '<li id="'+sublistId+'" class="html articleDetails" data-theme="c" data-item-index="'+index+'">'+
-                              '<a href="#articleDetails">'+this.title+' </a>';
-                          });
-                        // [2] some rss items aren't html
-                        } else {
-                          // TODO: unhandled right now
-                        }
-                        // [3] all rss items point to other rss feeds
-                      } else {
-                          $.each(JSON.parse(result).query.results.rss[0].channel.item, function() {
-                            var sublistId = rssId + '_' + listCount++;
-                            ul += '<li id="'+sublistId+'" data-source="'+this.link+'" class="rss" data-theme="c"><a href="#">'+this.title+'</a>'+
-                              '<ul data-role="listview" data-inset="true" id="'+sublistId+'_rss"></ul></li>'; 
-                          }); 
-                      }
-                  }                    
-              },
-              error: function(request, textStatus, errorThrown) { },
-              complete: function(request, textStatus){
-                $('#'+rssId).listview();
-                $('#'+rssId).html(ul).trigger('create');
-                $('#'+rssId).listview('refresh');
-                $.mobile.hidePageLoadingMsg()
-              }
-          });
-        }); //onclick
+      function renderFeedItems(url,title) {   
+        var yqlUrl = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20feed%20where%20url%3D%22" + 
+            encodeURIComponent(url) + "%22&format=json";
+        var ul = '';
+        $.ajax({
+            type: "GET",
+            url: yqlUrl,
+            contentType: "application/json; charset=utf-8",
+            dataType: "jsonp",
+            beforeSend: function() { $.mobile.showPageLoadingMsg(); },
+            success: function(data) {
+                var result = JSON.stringify(data);  
+                if (JSON.parse(result).query.results) {
+                  currentItems = JSON.parse(result).query.results.item;
+                  $.each(JSON.parse(result).query.results.item, function(index) {
+                    addCachedItem(this);
+                    if (this.link.type === 'rss' && this.link.content) {
+                       ul += '<li data-source="'+this.link.content+'" class="feed">' +
+                        '<a href="#feedPage&type=feed&url='+encodeURIComponent(this.link.content).replace(/\./g,'%2E')+'">'+this.title+'</a>' +
+                        '<ul data-role="listview" data-inset="true"></ul></li>';                             
+                    } else {
+                       ul += '<li class="articleDetails" data-item-index="'+index+'">'+
+                      '<a href="#articleDetails&type=item&url='+encodeURIComponent(this.link).replace(/\./g,'%2E')+'">'+this.title+' </a>';                     
+                    } 
+                  });
+                } else {
+                  console.log("ERROR: no yql result returned!");
+                }            
+            },
+            error: function(request, textStatus, errorThrown) { console.log("ERROR: "+request)},
+            complete: function(request, textStatus){
+              $('#feedList').show();
+              $('#feedList').listview();
+              $('#feedList').html(ul).trigger('create');
+              $('#feedList').listview('refresh');
+              $("#feedTitle").html(title);
+              $.mobile.hidePageLoadingMsg()
+            }
+        });
+      }

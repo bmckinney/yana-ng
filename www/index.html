@@ -14,10 +14,10 @@
     <script src="lib/jquery-mobile-global-config.js"></script>
     <script src="lib/amplify.min.js"></script>            
     <script src="lib/jsonStringify.js"></script>
+    <script src="lib/purl.js"></script>
     <script src="lib/cordova-2.0.0.js"></script>
     <script src="lib/childbrowser.js"></script>
     <script src="lib/jquery.mobile-1.1.0/jquery.mobile-1.1.0.min.js"></script>
-    <script src="lib/jquery.yqlquery.min.js"></script>
     <script src="lib/yana.js"></script>
     <link rel="stylesheet" href="lib/jquery.mobile-1.1.0/jquery.mobile-1.1.0.min.css" />  
 
@@ -26,42 +26,73 @@
 
   <!-- HOME PAGE -->
   <div data-role="page" data-theme="b" data-add-back-btn="true" id="home">
+
       <div data-role="header" data-theme="b" class="ui-bar">
         <h1>Yana Demo Journal</h1>
       </div>
+
       <div data-role="content" class="ui-content" role="main" data-theme="c">
 
           <ul data-role="listview" data-theme="c" data-inset="true" id="list_a"> 
-            <li id="current" data-source="http://osc.hul.harvard.edu/yana/currentissue.xml" class="rss">
-              <a href="#">Current Issue</a>
-              <ul data-role="listview" data-inset="true" id="current_rss"></ul>
+            <!-- CURRENT ISSUE -->
+            <li id="current" data-source="http://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss" class="feed">
+              <a href="#feedPage">
+                <img src="img/icons/CurrentIssueIcon.png" class="ui-li-icon ui-li-thumb"/>
+                <h3 style="margin-left: 25px;">Current Issue</h3>
+              </a>
+
             </li> 
-            <li id="archive" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/archive.xml" class="rss">
-              <a href="#">Archive</a>
-              <ul data-role="listview" data-inset="true" id="archive_rss"></ul>
+            <!-- ARCHIVE -->
+            <li id="archive" data-source="http://veesmee.com/yana/archive.xml" class="feed">
+              <a href="#feedPage">
+                <img src="img/icons/ArchiveIcon.png" class="ui-li-icon"/>
+                <h3 style="margin-left: 25px;">Archive</h3>
+              </a>
             </li> 
-            <li id="search" class"opensearch">
-              <a href="#searchPage">Search</a>
+            <!-- SEARCH -->
+            <li id="search" class="opensearch">
+              <a href="#searchPage">
+                <img src="img/icons/SearchIcon.png" class="ui-li-icon"/>
+                <h3 style="margin-left: 25px;">Search</h3>
+              </a>
             </li> 
+            <!-- FAVORITES -->
             <li id="favorites" class="favorites">
-              <a href="#favorites">Favorites</a>
-              <ul data-role="listview" data-inset="true" id="favorites_rss"></ul>
+              <a href="#favPage">
+                <img src="img/icons/FavoritesIcon.png" class="ui-li-icon"/>
+                <h3 style="margin-left: 25px;">Favorites</h3>
+              </a>
             </li> 
           </ul>
 
           <ul data-role="listview" data-theme="c" data-inset="true" id="list_b">
-            <li id="about" class="html" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/aboutyana.html">
-              <a href="#htmlPage">About</a>
+            <!-- ABOUT -->
+            <li id="about" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/aboutyana.html" class="html">
+              <a href="#htmlPage">
+                <img src="img/icons/AboutIcon.png" class="ui-li-icon"/>
+                <h3 style="margin-left: 25px;">About</h3>
+              </a>
             </li>
-            <li id="announce" data-source="http://osc.hul.harvard.edu/yana/announcements.xml" class="rss">
-              <a href="#">Announcements</a>
-              <ul data-role="listview" data-inset="true" id="announce_rss"></ul>
+            <!-- ANNOUNCEMENTS -->
+            <li id="announce" data-source="http://osc.hul.harvard.edu/yana/announcements.xml" class="feed">
+              <a href="#feedPage">
+                <img src="img/icons/AnnouncementsIcon.png" class="ui-li-icon"/>
+                <h3 style="margin-left: 25px;">Announcements</h3>
+              </a>
             </li> 
+            <!-- AUTHORS -->
             <li id="authors" class="html" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/forAuthors.html">
-              <a href="#htmlPage">For Authors</a>
+              <a href="#htmlPage">
+                <img src="img/icons/AuthorIcon.png" class="ui-li-icon"/>
+                <h3 style="margin-left: 25px;">For Authors</h3>
+              </a>
             </li>
+            <!-- LINKS -->
             <li id="lnks" class="html" data-source="http://osc.hul.harvard.edu/sites/osc.hul.harvard.edu.yana/mobile/yana_links.html">
-              <a href="#htmlPage">Links</a>
+              <a href="#htmlPage">
+                <img src="img/icons/LinksIcon.png" class="ui-li-icon"/>
+                <h3 style="margin-left: 25px;">Links</h3>
+              </a>
             </li>
 
           </ul>
@@ -92,25 +123,50 @@
 
  </div>
 
-<!-- ARTICLE DETAILS -->
+  <!-- JOURNAL ARTICLE LIST -->
+  <div data-role="page" id="feedPage" data-theme="b">
+    <div data-role="header" data-theme="b">
+      <a href="#" data-rel="back" data-icon="arrow-l">Back</a>
+      <h1 id="feedTitle"></h1>
+      <a href="#home" data-icon="home">Home</a>
+    </div>
+    <div data-role="content" data-theme="c">
+      <ul data-role="listview" data-inset="true" id="feedList"></ul>
+    </div>
+  </div>  
+
+  <!-- FAVORITES LIST -->
+  <div data-role="page" id="favPage" data-theme="b">
+    <div data-role="header" data-theme="b">
+      <a href="#" data-rel="back" data-icon="arrow-l">Back</a>
+      <h1 id="favTitle">Favorites</h1>
+      <a href="#home" data-icon="home">Home</a>
+    </div>
+    <div data-role="content" id="favContent" data-theme="c">
+      <ul data-role="listview" data-inset="true" id="favList"></ul>
+    </div>
+  </div>  
+
+  <!-- ARTICLE DETAILS -->
   <div data-role="page" id="articleDetails" data-theme="b">
     <div data-role="header" data-theme="b">
       <a href="#" data-rel="back" data-icon="arrow-l">Back</a>
       <h1 id="articleTitle"></h1>
-      <a href="#home" data-icon="home">Home</a></div>
+      <a href="#home" data-icon="home">Home</a>
+    </div>
     <div data-role="content" data-theme="c">
       <div id="articleContent"></div>
     </div>
-    <div data-role="footer" class="ui-bar" data-theme="b" id="articleFooter">     
-    </div>
+    <div data-role="footer" class="ui-bar" data-theme="b" id="articleFooter" data-position="fixed"></div>
   </div>  
 
-<!-- HTML DISPLAY -->
+  <!-- HTML DISPLAY -->
   <div data-role="page" id="htmlPage" data-theme="b">
     <div data-role="header" data-theme="b">
       <a href="#" data-rel="back" data-icon="arrow-l">Back</a>
       <h1 id="htmlTitle"></h1>
-      <a href="#home" data-icon="home">Home</a></div>
+      <a href="#home" data-icon="home">Home</a>
+    </div>
     <div data-role="content" data-theme="c">
       <div id="htmlContent"></div>
     </div>
