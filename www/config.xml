@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
-        id        = "io.cordova.hello-cordova"
+        id        = "edu.hul.harvard.osc.yana"
         version   = "2.0.0">
-    <name>Hello Cordova</name>
+    <name>Yana</name>
 
     <description>
-        A sample Apache Cordova application that responds to the deviceready event.
+        An Open Source Template for Scholarly Journals.
     </description>
 
-    <author href="http://cordova.io" email="callback-dev@incubator.apache.org">
-        Apache Cordova Team
+    <author href="http://osc.hul.harvard.edu/yana" email="yana@hul.harvard.edu">
+        Yana Team
     </author>
 
     <icon src="res/icon/cordova_512.png"        width="512" height="512" />
